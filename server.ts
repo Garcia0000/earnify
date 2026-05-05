@@ -211,21 +211,27 @@ async function startServer() {
 
   app.get("/api/offers", async (req, res) => {
     const tracking_id = req.query.tracking_id || "";
-    const visitor_ip = req.headers["cf-connecting-ip"] || req.ip;
     const user_agent = req.headers["user-agent"] || "";
     const limit = req.query.limit || 20;
 
-    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=${limit}&ip=${visitor_ip}&ua=${encodeURIComponent(user_agent as string)}&tracking_id=${encodeURIComponent(tracking_id as string)}`;
+    // Capturar IP real del usuario
+    const visitor_ip =
+      req.headers["x-forwarded-for"]?.toString().split(",")[0].trim() ||
+      req.headers["cf-connecting-ip"]?.toString() ||
+      req.socket.remoteAddress ||
+      "";
+
+    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=${limit}&ip=${visitor_ip}&ua=${encodeURIComponent(user_agent as string)}&tracking_id=${encodeURIComponent(tracking_id as string)}&showmobile=1&showall=1`;
 
     try {
       const response = await fetch(feedUrl);
       const xmlData = await response.text();
       const jsonObj = parser.parse(xmlData);
-      
+
       const offers = jsonObj?.offers?.offer || [];
       const normalizedOffers = Array.isArray(offers) ? offers : [offers];
 
-      res.json(normalizedOffers.filter(o => o && o.title).map(o => ({
+      res.json(normalizedOffers.filter((o: any) => o && o.title).map((o: any) => ({
         id: o.offerid,
         title: o.title,
         description: o.description || "",
@@ -236,6 +242,7 @@ async function startServer() {
         countries: o.countries || ""
       })));
     } catch (error) {
+      console.error("Offers fetch error:", error);
       res.status(500).json({ error: "Failed to fetch offers" });
     }
   });
