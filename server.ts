@@ -212,49 +212,59 @@ async function startServer() {
   app.get("/api/offers", async (req, res) => {
     const tracking_id = req.query.tracking_id || "";
     const user_agent = req.headers["user-agent"] || "";
-    const limit = req.query.limit || 20;
 
-    const visitor_ip =
-      (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() ||
-      (req.headers["cf-connecting-ip"] as string) ||
-      req.socket.remoteAddress || "";
-
-    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=${limit}&showall=1&showmobile=1&country=`;
+    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=20&showall=1&showmobile=1&ua=${encodeURIComponent(user_agent as string)}`;
 
     try {
       const response = await fetch(feedUrl);
       const xmlData = await response.text();
 
-      const parser2 = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "" });
+      console.log("RAW XML FIRST 500 CHARS:", xmlData.substring(0, 500));
+
+      const parser2 = new XMLParser({ 
+        ignoreAttributes: false, 
+        attributeNamePrefix: "@_",
+        isArray: (name) => ['offer', 'item'].includes(name)
+      });
+      
       const jsonObj = parser2.parse(xmlData);
+      console.log("PARSED KEYS:", JSON.stringify(Object.keys(jsonObj)));
 
-      // Intentar múltiples estructuras posibles del XML
-      const root = jsonObj?.rss?.channel?.item
-        || jsonObj?.offers?.offer
-        || jsonObj?.rss?.channel
-        || jsonObj?.channel?.item
-        || jsonObj?.offers
-        || [];
+      // Buscar offers en cualquier nivel
+      const findOffers = (obj: any): any[] => {
+        if (Array.isArray(obj)) return obj;
+        if (!obj || typeof obj !== 'object') return [];
+        for (const key of Object.keys(obj)) {
+          if (['offer', 'item', 'offers'].includes(key)) {
+            const val = obj[key];
+            return Array.isArray(val) ? val : [val];
+          }
+          const found = findOffers(obj[key]);
+          if (found.length > 0) return found;
+        }
+        return [];
+      };
 
-      const offerArray = Array.isArray(root) ? root : (root && typeof root === 'object' ? [root] : []);
+      const offerArray = findOffers(jsonObj);
+      console.log("OFFERS FOUND:", offerArray.length);
 
       const mapped = offerArray
-        .filter((o: any) => o && (o.title || o.offerid))
+        .filter((o: any) => o && typeof o === 'object')
         .map((o: any) => ({
-          id: o.offerid || o.guid || Math.random(),
-          title: o.title || "Offer",
-          description: o.description || o.summary || "",
+          id: o.offerid || o.id || Math.random(),
+          title: o.title || o.name || "Offer",
+          description: o.description || o.requirements || "",
           payout: parseFloat(o.payout || o.amount || "0") || 0,
-          link: (o.offerlink || o.link || o.url || "").replace('www.cpagrip.com', 'filetrkr.com'),
-          image: o.offerphoto || o.image || o.thumbnail || "",
+          link: (o.offerlink || o.link || "").replace('www.cpagrip.com', 'filetrkr.com'),
+          image: o.offerphoto || o.image || "",
           type: o.offer_type || o.type || "",
           countries: o.countries || o.country || ""
         }));
 
       res.json(mapped);
-    } catch (error) {
-      console.error("Offers fetch error:", error);
-      res.status(500).json({ error: "Failed to fetch offers" });
+    } catch (error: any) {
+      console.error("Offers error:", error.message);
+      res.status(500).json({ error: error.message });
     }
   });
 
