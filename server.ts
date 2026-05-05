@@ -219,7 +219,7 @@ async function startServer() {
       (req.headers["cf-connecting-ip"] as string) ||
       req.socket.remoteAddress || "";
 
-    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=${limit}&ip=${visitor_ip}&ua=${encodeURIComponent(user_agent)}&tracking_id=${encodeURIComponent(tracking_id as string)}&showall=1&showmobile=1`;
+    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=${limit}&showall=1&showmobile=1&country=`;
 
     try {
       const response = await fetch(feedUrl);
