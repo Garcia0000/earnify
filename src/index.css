@@ -1,45 +1,62 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@100;300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Syne", sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", sans-serif;
   
   --color-primary: #6C3EF4;
-  --color-accent: #00FF87;
+  --color-accent: #00C896;
   --color-dark-bg: #0A0A0C;
   --color-dark-card: #151518;
 }
 
 @layer base {
   :root {
-    --background: #ffffff;
-    --foreground: #0A0A0C;
+    --background: #F4F6FA;
+    --foreground: #0D0D14;
+    --card-bg: #FFFFFF;
+    --card-border: #E8ECF4;
+    --muted: #8A93A8;
   }
-  
+
   .dark {
     --background: #0A0A0C;
     --foreground: #ffffff;
+    --card-bg: #151518;
+    --card-border: rgba(255,255,255,0.06);
+    --muted: #666;
   }
 
   body {
-    @apply bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-primary/20 transition-colors duration-300;
+    @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
     font-family: var(--font-sans);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+    font-family: var(--font-display);
+    @apply tracking-tight;
   }
 }
 
-.dark-card {
-  @apply bg-dark-card border border-white/5 shadow-2xl;
+.bank-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
 }
 
 .mobile-bottom-nav {
-  @apply fixed bottom-0 left-0 right-0 z-50 bg-dark-card/80 backdrop-blur-xl border-t border-white/5 px-6 pb-2;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 50;
+  background: var(--card-bg);
+  border-top: 1px solid var(--card-border);
+  padding: 0 8px 8px;
 }
 
 .tap-effect {
   @apply active:scale-95 transition-transform;
 }
+
+* { -webkit-tap-highlight-color: transparent; }

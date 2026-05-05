@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -64,7 +65,21 @@ export async function initDb() {
       )
     `);
 
+    await connection.query('SET NAMES utf8mb4');
+    
     console.log('Database tables verified/created.');
+    
+    // Check if we should seed a test user
+    const [users]: any = await connection.query('SELECT count(*) as count FROM users');
+    if (users[0].count === 0) {
+      console.log('Seeding initial admin user...');
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await connection.query(
+        'INSERT INTO users (id, email, password, balance, referral_code) VALUES (?, ?, ?, ?, ?)',
+        ['admin-id', 'admin@earnify.test', hashedPassword, 100.00, 'ADMIN']
+      );
+      console.log('Initial user created: admin@earnify.test / admin123');
+    }
   } catch (error) {
     console.error('Error initializing database:', error);
   } finally {
