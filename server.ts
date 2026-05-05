@@ -247,6 +247,17 @@ async function startServer() {
     }
   });
 
+  app.get("/api/debug-feed", async (req, res) => {
+    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=5&showall=1&showmobile=1`;
+    try {
+      const response = await fetch(feedUrl);
+      const xmlData = await response.text();
+      res.send(`<pre>${xmlData}</pre>`);
+    } catch (error) {
+      res.status(500).send("Error: " + error);
+    }
+  });
+
   // --- CPAGRIP POSTBACK ---
   app.all("/api/postback", async (req, res) => {
     const tracking_id = (req.body.tracking_id || req.query.tracking_id || req.query.user_id) as string;
