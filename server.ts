@@ -216,7 +216,7 @@ async function startServer() {
       (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() ||
       req.socket.remoteAddress || "";
 
-    const feedUrl = `https://www.cpagrip.com/common/offer_feed_json.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=20&tracking_id=${encodeURIComponent(tracking_id as string)}&ip=${visitor_ip}&ua=${encodeURIComponent(user_agent as string)}&domain=filetrkr.com&showall=true&showmobile=1`;
+    const feedUrl = `https://www.cpagrip.com/common/offer_feed_json.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=20&tracking_id=${encodeURIComponent(tracking_id as string)}&ip=${visitor_ip}&ua=${encodeURIComponent(user_agent as string)}&showall=true&showmobile=1`;
 
     try {
       const response = await fetch(feedUrl);
