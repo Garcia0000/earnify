@@ -44,6 +44,15 @@ async function startServer() {
 
   // --- HEALTH CHECK ---
   app.get("/api/health", async (req, res) => {
+    if (!process.env.DB_HOST) {
+      return res.json({ 
+        status: "ok", 
+        database: "not_configured",
+        mode: "preview/no-db",
+        env: process.env.NODE_ENV
+      });
+    }
+
     try {
       const [rows]: any = await pool.query("SELECT 1 as connected");
       res.json({ 

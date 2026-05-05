@@ -18,6 +18,11 @@ const pool = mysql.createPool({
 export default pool;
 
 export async function initDb() {
+  if (!process.env.DB_HOST) {
+    console.warn('DB_HOST not defined. Database initialization skipped (expected in preview).');
+    return;
+  }
+
   console.log('Attempting to connect to MySQL at:', process.env.DB_HOST);
   const connection = await pool.getConnection();
   try {
