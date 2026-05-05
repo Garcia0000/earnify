@@ -42,6 +42,21 @@ async function startServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // --- HEALTH CHECK ---
+  app.get("/api/health", async (req, res) => {
+    try {
+      const [rows]: any = await pool.query("SELECT 1 as connected");
+      res.json({ 
+        status: "ok", 
+        database: rows[0].connected === 1 ? "connected" : "error",
+        env: process.env.NODE_ENV,
+        db_host: process.env.DB_HOST
+      });
+    } catch (error: any) {
+      res.status(500).json({ status: "error", database: error.message });
+    }
+  });
+
   // Auth Middleware
   const authenticateToken = (req: any, res: any, next: any) => {
     const authHeader = req.headers['authorization'];
@@ -74,9 +89,11 @@ async function startServer() {
       const token = jwt.sign({ id: userId, email }, AUTH_SECRET);
       res.json({ token, user: { id: userId, email, referralCode: personalReferralCode } });
     } catch (error: any) {
-      if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: "Email already exists" });
-      console.error(error);
-      res.status(500).json({ error: "Registration failed" });
+      console.error("REGISTRATION ERROR:", error);
+      if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+        return res.status(400).json({ error: "Email already exists. Please try to Sign In instead." });
+      }
+      res.status(500).json({ error: `Registration failed: ${error.message || 'Internal Error'}` });
     }
   });
 
@@ -90,10 +107,11 @@ async function startServer() {
         const token = jwt.sign({ id: user.id, email: user.email }, AUTH_SECRET);
         res.json({ token, user: { id: user.id, email: user.email, referralCode: user.referral_code } });
       } else {
-        res.status(401).json({ error: "Invalid credentials" });
+        res.status(401).json({ error: "Invalid credentials. Please check your email and password." });
       }
-    } catch (error) {
-      res.status(500).json({ error: "Login failed" });
+    } catch (error: any) {
+      console.error("LOGIN ERROR:", error);
+      res.status(500).json({ error: `Login failed: ${error.message || 'Internal Error'}` });
     }
   });
 
@@ -133,23 +151,31 @@ async function startServer() {
       await connection.beginTransaction();
       
       const [userRows]: any = await connection.query("SELECT balance FROM users WHERE id = ? FOR UPDATE", [req.user.id]);
+      if (userRows.length === 0) throw new Error("User record not found");
+      
       const currentBalance = parseFloat(userRows[0].balance);
+      const withdrawAmount = parseFloat(amount);
 
-      if (currentBalance < amount) {
-        throw new Error("Insufficient balance");
+      if (isNaN(withdrawAmount) || withdrawAmount < 5) {
+        throw new Error("Invalid amount. Minimum withdrawal is $5.00");
       }
 
-      await connection.query("UPDATE users SET balance = balance - ? WHERE id = ?", [amount, req.user.id]);
+      if (currentBalance < withdrawAmount) {
+        throw new Error(`Insufficient balance. Your balance is $${currentBalance.toFixed(2)}`);
+      }
+
+      await connection.query("UPDATE users SET balance = balance - ? WHERE id = ?", [withdrawAmount, req.user.id]);
       await connection.query(
         "INSERT INTO withdrawals (user_id, amount, method, details, status) VALUES (?, ?, ?, ?, 'pending')",
-        [req.user.id, amount, method, details]
+        [req.user.id, withdrawAmount, method, details]
       );
 
       await connection.commit();
       res.json({ success: true });
     } catch (error: any) {
       await connection.rollback();
-      res.status(400).json({ error: error.message });
+      console.error("WITHDRAWAL ERROR:", error);
+      res.status(400).json({ error: error.message || "Withdrawal failed" });
     } finally {
       connection.release();
     }
