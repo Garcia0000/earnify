@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@100;300;400;500;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Syne", sans-serif;
+  
+  --color-primary: #6C3EF4;
+  --color-accent: #00FF87;
+  --color-dark-bg: #0A0A0C;
+  --color-dark-card: #151518;
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0A0A0C;
+  }
+  
+  .dark {
+    --background: #0A0A0C;
+    --foreground: #ffffff;
+  }
+
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-primary/20 transition-colors duration-300;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+.dark-card {
+  @apply bg-dark-card border border-white/5 shadow-2xl;
+}
+
+.mobile-bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 z-50 bg-dark-card/80 backdrop-blur-xl border-t border-white/5 px-6 pb-2;
+}
+
+.tap-effect {
+  @apply active:scale-95 transition-transform;
+}

@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "fullName": { "type": "string" },
+        "country": { "type": "string" },
+        "device": { "type": "string" },
+        "language": { "type": "string" },
+        "referralCode": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLoginAt": { "type": "string", "format": "date-time" },
+        "isAdmin": { "type": "boolean" }
+      },
+      "required": ["email", "country", "device", "referralCode", "createdAt"]
+    },
+    "Balance": {
+      "title": "Balance",
+      "description": "User current and total earnings",
+      "type": "object",
+      "properties": {
+        "current": { "type": "number" },
+        "totalEarned": { "type": "number" },
+        "offersCompleted": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["current", "totalEarned", "offersCompleted", "updatedAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Record of earnings (offers, referrals)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["offer", "referral"] },
+        "description": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      },
+      "required": ["userId", "amount", "type", "timestamp"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "User payout requests",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["paypal", "bank_transfer"] },
+        "details": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "paid", "rejected"] },
+        "requestedAt": { "type": "string", "format": "date-time" },
+        "processedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "method", "status", "requestedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "balances/{userId}": {
+      "schema": "Balance",
+      "description": "User financial standing"
+    },
+    "transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Log of all earnings"
+    },
+    "withdrawals/{withdrawalId}": {
+      "schema": "Withdrawal",
+      "description": "User payout requests"
+    },
+    "referrals/{userId}/members/{referredUserId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "joinedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "description": "List of users referred by a specific user"
+    }
+  }
+}
