@@ -15,13 +15,18 @@ const AUTH_SECRET = process.env.JWT_SECRET || "super-secret-key";
 
 const CPAGRIP_USER_ID = process.env.CPAGRIP_USER || '1152355';
 const CPAGRIP_KEY = process.env.CPAGRIP_KEY || '129a0adeefd68d21748d250386079204';
-const CPAGRIP_POS = process.env.CPAGRIP_POS || '';
+const CPAGRIP_POSTBACK_PASSWORD = process.env.CPAGRIP_POSTBACK_PASSWORD || '';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  await initDb();
+  try {
+    await initDb();
+  } catch (error) {
+    console.error('CRITICAL: Database initialization failed. Server will start but DB features may break.', error);
+  }
+  
   const app = express();
   const PORT = 3000;
 
@@ -197,7 +202,7 @@ async function startServer() {
     const amount = (req.body.payout || req.query.payout || req.body.amount || req.query.amount) as string;
     const password = (req.body.password || req.query.password) as string;
 
-    if (CPAGRIP_POS && password !== CPAGRIP_POS) {
+    if (CPAGRIP_POSTBACK_PASSWORD && password !== CPAGRIP_POSTBACK_PASSWORD) {
       return res.status(401).send("Unauthorized");
     }
 

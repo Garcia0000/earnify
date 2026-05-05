@@ -17,9 +17,10 @@ const pool = mysql.createPool({
 export default pool;
 
 export async function initDb() {
+  console.log('Attempting to connect to MySQL at:', process.env.DB_HOST);
   const connection = await pool.getConnection();
   try {
-    console.log('Initializing MySQL tables...');
+    console.log('MySQL Connection established. Initializing tables...');
     
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
