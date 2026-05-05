@@ -6,9 +6,18 @@ import { XMLParser } from "fast-xml-parser";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pool, { initDb } from "./src/lib/mysql.js";
+import pool, { initDb } from "./src/lib/mysql.ts";
 
 dotenv.config();
+
+// Debugging process errors in production
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
 
 const parser = new XMLParser();
 const AUTH_SECRET = process.env.JWT_SECRET || "super-secret-key";

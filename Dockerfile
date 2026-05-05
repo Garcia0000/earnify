@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Copy source and build frontend
+# Copy source and build frontend (Vite)
 COPY . .
 RUN npm run build
 
@@ -24,13 +24,16 @@ ENV PORT=3000
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# Copy built assets and server source
+# Copy built assets
 COPY --from=builder /app/dist ./dist
+# Copy server source and all source files for Node native TS support
 COPY --from=builder /app/server.ts ./
-COPY --from=builder /app/src/lib ./src/lib
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig.json ./
 
 # Expose port
 EXPOSE 3000
 
 # Start server with experimental TypeScript support
+# We use --experimental-strip-types to run server.ts directly
 CMD ["node", "--experimental-strip-types", "server.ts"]
