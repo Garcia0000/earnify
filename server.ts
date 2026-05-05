@@ -214,33 +214,44 @@ async function startServer() {
     const user_agent = req.headers["user-agent"] || "";
     const limit = req.query.limit || 20;
 
-    // Capturar IP real del usuario
     const visitor_ip =
-      req.headers["x-forwarded-for"]?.toString().split(",")[0].trim() ||
-      req.headers["cf-connecting-ip"]?.toString() ||
-      req.socket.remoteAddress ||
-      "";
+      (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() ||
+      (req.headers["cf-connecting-ip"] as string) ||
+      req.socket.remoteAddress || "";
 
-    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=${limit}&ip=${visitor_ip}&ua=${encodeURIComponent(user_agent as string)}&tracking_id=${encodeURIComponent(tracking_id as string)}&showmobile=1&showall=1`;
+    const feedUrl = `https://www.cpagrip.com/common/offer_feed_rss.php?user_id=${CPAGRIP_USER_ID}&key=${CPAGRIP_KEY}&limit=${limit}&ip=${visitor_ip}&ua=${encodeURIComponent(user_agent)}&tracking_id=${encodeURIComponent(tracking_id as string)}&showall=1&showmobile=1`;
 
     try {
       const response = await fetch(feedUrl);
       const xmlData = await response.text();
-      const jsonObj = parser.parse(xmlData);
 
-      const offers = jsonObj?.offers?.offer || [];
-      const normalizedOffers = Array.isArray(offers) ? offers : [offers];
+      const parser2 = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "" });
+      const jsonObj = parser2.parse(xmlData);
 
-      res.json(normalizedOffers.filter((o: any) => o && o.title).map((o: any) => ({
-        id: o.offerid,
-        title: o.title,
-        description: o.description || "",
-        payout: parseFloat(o.payout) || 0,
-        link: (o.offerlink || "").replace('www.cpagrip.com', 'filetrkr.com'),
-        image: o.offerphoto || "",
-        type: o.offer_type || "",
-        countries: o.countries || ""
-      })));
+      // Intentar múltiples estructuras posibles del XML
+      const root = jsonObj?.rss?.channel?.item
+        || jsonObj?.offers?.offer
+        || jsonObj?.rss?.channel
+        || jsonObj?.channel?.item
+        || jsonObj?.offers
+        || [];
+
+      const offerArray = Array.isArray(root) ? root : (root && typeof root === 'object' ? [root] : []);
+
+      const mapped = offerArray
+        .filter((o: any) => o && (o.title || o.offerid))
+        .map((o: any) => ({
+          id: o.offerid || o.guid || Math.random(),
+          title: o.title || "Offer",
+          description: o.description || o.summary || "",
+          payout: parseFloat(o.payout || o.amount || "0") || 0,
+          link: (o.offerlink || o.link || o.url || "").replace('www.cpagrip.com', 'filetrkr.com'),
+          image: o.offerphoto || o.image || o.thumbnail || "",
+          type: o.offer_type || o.type || "",
+          countries: o.countries || o.country || ""
+        }));
+
+      res.json(mapped);
     } catch (error) {
       console.error("Offers fetch error:", error);
       res.status(500).json({ error: "Failed to fetch offers" });
