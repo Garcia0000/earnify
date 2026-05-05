@@ -37,6 +37,7 @@ export async function initDb() {
         total_earned DECIMAL(10, 2) DEFAULT 0.00,
         referral_code VARCHAR(50) UNIQUE NOT NULL,
         referred_by VARCHAR(128),
+        role ENUM('earner', 'advertiser', 'admin') DEFAULT 'earner',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_referral_code (referral_code)
       )
@@ -73,6 +74,14 @@ export async function initDb() {
     await connection.query('SET NAMES utf8mb4');
     
     console.log('Database tables verified/created.');
+
+    // Ensure role column exists (for backward compatibility)
+    try {
+      await connection.query("ALTER TABLE users ADD COLUMN role ENUM('earner', 'advertiser', 'admin') DEFAULT 'earner' AFTER referred_by");
+      console.log('Added role column to users table.');
+    } catch (e) {
+      // Ignore if column already exists
+    }
     
     // Check if we should seed a test user
     const [users]: any = await connection.query('SELECT count(*) as count FROM users');

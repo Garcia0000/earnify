@@ -3,40 +3,24 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import './i18n/config';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
-import OfferWall from './components/OfferWall';
+import Tasks from './components/Tasks';
 import WithdrawalPage from './components/Withdrawal';
 import AdminPanel from './components/Admin';
-import { Coins, LogIn as LoginIcon, ShieldCheck, Globe, Star, Sparkles, UserPlus } from 'lucide-react';
+import Campaigns from './components/Campaigns';
+import CreateCampaign from './components/CreateCampaign';
+import Deposit from './components/Deposit';
+import { Coins } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useTranslation } from 'react-i18next';
 
 function SplashScreen() {
   return (
-    <motion.div
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[1000] bg-dark-bg flex flex-col items-center justify-center pointer-events-none"
-    >
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'backOut' }}
-        className="flex flex-col items-center"
-      >
-        <div className="p-6 bg-primary text-white rounded-[2rem] shadow-2xl shadow-primary/40 mb-8">
-            <Coins size={64} className="animate-pulse" />
+    <motion.div initial={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[1000] flex flex-col items-center justify-center" style={{ background: '#0D0D14' }}>
+      <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-6">
+        <div className="p-6 rounded-[2rem] shadow-2xl" style={{ background: '#6C3EF4' }}>
+          <Coins size={56} color="white" />
         </div>
-        <h1 className="text-4xl font-black tracking-tighter italic uppercase text-white">EARNIFY</h1>
-        <div className="mt-4 flex gap-1">
-            {[0, 1, 2].map((i) => (
-                <motion.div
-                    key={i}
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
-                    transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
-                    className="w-2 h-2 bg-accent rounded-full"
-                />
-            ))}
-        </div>
+        <h1 style={{ fontSize: 36, fontWeight: 900, color: '#fff', fontFamily: 'var(--font-display)', letterSpacing: '-1px' }}>EARNIFY</h1>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Social Exchange Platform</p>
       </motion.div>
     </motion.div>
   );
@@ -44,10 +28,10 @@ function SplashScreen() {
 
 function AuthScreen() {
   const { login, register } = useAuth();
-  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'earner' | 'advertiser'>('earner');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -60,7 +44,7 @@ function AuthScreen() {
         await login(email, password);
       } else {
         const ref = localStorage.getItem('referredBy') || undefined;
-        await register(email, password, ref);
+        await register(email, password, ref, role);
       }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Authentication failed');
@@ -70,83 +54,91 @@ function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-fintech-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/5 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2" />
+    <div style={{ minHeight: '100vh', background: '#F4F6FA', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 420, width: '100%' }}>
 
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full fintech-card p-10 md:p-14 rounded-[3.5rem] text-center relative z-10"
-      >
-        <div className="inline-flex p-5 bg-primary text-white rounded-[2rem] mb-10 shadow-2xl shadow-primary/30 relative">
-          <Coins size={48} className="rotate-12" />
-          <div className="absolute -top-2 -right-2 p-1.5 bg-accent text-dark-bg rounded-lg shadow-lg">
-             <Sparkles size={16} />
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 20, background: '#6C3EF4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Coins size={32} color="white" />
           </div>
+          <h1 style={{ fontSize: 32, fontWeight: 900, fontFamily: 'var(--font-display)', letterSpacing: '-1px', color: '#0D0D14' }}>EARNIFY</h1>
+          <p style={{ fontSize: 12, color: '#8A93A8', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Social Exchange Platform</p>
         </div>
-        <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tighter italic uppercase">EARNIFY</h1>
-        
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-500 text-xs font-bold rounded-2xl border border-red-100 uppercase tracking-widest">
-            {error}
-          </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-left">
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 px-2">Email Address</label>
-            <input 
-              required
-              type="email"
-              value={email}
+        <div className="bank-card" style={{ padding: 32, borderRadius: 24 }}>
+
+          {error && (
+            <div style={{ background: '#FEF2F2', color: '#EF4444', padding: '12px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, marginBottom: 20 }}>
+              {error}
+            </div>
+          )}
+
+          {/* Role selector (solo en register) */}
+          {!isLogin && (
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#8A93A8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>I want to...</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { value: 'earner', label: '💰 Earn Money', desc: 'Complete tasks' },
+                  { value: 'advertiser', label: '📢 Advertise', desc: 'Grow my social' },
+                ].map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setRole(r.value as any)}
+                    style={{
+                      padding: '14px 12px',
+                      borderRadius: 14,
+                      border: `2px solid ${role === r.value ? '#6C3EF4' : 'var(--card-border)'}`,
+                      background: role === r.value ? '#EDE9FE' : 'var(--background)',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <p style={{ fontSize: 14, fontWeight: 800, color: role === r.value ? '#6C3EF4' : '#0D0D14', margin: '0 0 2px' }}>{r.label}</p>
+                    <p style={{ fontSize: 11, color: '#8A93A8', margin: 0 }}>{r.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+            <input
+              required type="email" value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-6 py-5 rounded-2xl bg-gray-50 border border-gray-100 text-gray-900 font-bold outline-none focus:border-primary focus:bg-white transition-all shadow-sm"
               placeholder="your@email.com"
+              style={{ padding: '14px 16px', borderRadius: 12, border: '1px solid var(--card-border)', background: 'var(--background)', fontSize: 14, fontWeight: 600, outline: 'none' }}
             />
-          </div>
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 px-2">Password</label>
-            <input 
-              required
-              type="password"
-              value={password}
+            <input
+              required type="password" value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-6 py-5 rounded-2xl bg-gray-50 border border-gray-100 text-gray-900 font-bold outline-none focus:border-primary focus:bg-white transition-all shadow-sm"
               placeholder="••••••••"
+              style={{ padding: '14px 16px', borderRadius: 12, border: '1px solid var(--card-border)', background: 'var(--background)', fontSize: 14, fontWeight: 600, outline: 'none' }}
             />
           </div>
-          
+
           <button
-            type="submit"
+            onClick={handleSubmit}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-4 bg-gray-900 text-white py-5 rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-primary transition-all shadow-2xl shadow-gray-200 active:scale-[0.96] group"
+            style={{
+              width: '100%', padding: '14px', borderRadius: 50,
+              background: '#6C3EF4', color: '#fff', border: 'none',
+              fontSize: 14, fontWeight: 800, cursor: 'pointer',
+              fontFamily: 'var(--font-display)', letterSpacing: '0.05em',
+              opacity: loading ? 0.7 : 1
+            }}
           >
-            {isLogin ? <LoginIcon size={20} /> : <UserPlus size={20} />}
-            {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+            {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
           </button>
-        </form>
 
-        <button 
-          onClick={() => setIsLogin(!isLogin)}
-          className="mt-8 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-colors"
-        >
-          {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
-        </button>
-
-        <div className="mt-12 grid grid-cols-3 gap-6 pt-10 border-t border-gray-50">
-          <div className="flex flex-col items-center gap-2">
-            <Globe size={20} className="text-primary/30" />
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Global</p>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <ShieldCheck size={20} className="text-primary/30" />
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Secure</p>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <Star size={20} className="text-primary/30" />
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Fintech</p>
-          </div>
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', fontSize: 12, fontWeight: 700, color: '#8A93A8', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+          >
+            {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
+          </button>
         </div>
       </motion.div>
     </div>
@@ -161,42 +153,37 @@ function MainApp() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
-    if (ref) {
-      localStorage.setItem('referredBy', ref);
-    }
-
+    if (ref) localStorage.setItem('referredBy', ref);
     const timer = setTimeout(() => setShowSplash(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
+  const isAdvertiser = user?.role === 'advertiser';
+
   return (
     <AnimatePresence>
       {showSplash && <SplashScreen key="splash" />}
-      
       {!showSplash && (
-        <motion.div
-           key="content"
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           className="min-h-screen transition-opacity duration-1000"
-        >
+        <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           {loading ? (
-            <div className="min-h-screen flex items-center justify-center bg-dark-bg">
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
-                    className="w-12 h-12 border-4 border-primary/20 border-t-accent rounded-full"
-                />
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D0D14' }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(108,62,244,0.2)', borderTopColor: '#6C3EF4', animation: 'spin 1s linear infinite' }} />
             </div>
           ) : !user ? (
             <AuthScreen />
           ) : (
             <Layout activeTab={activeTab} onTabChange={setActiveTab}>
               {activeTab === 'dashboard' && <Dashboard />}
-              {activeTab === 'offers' && <OfferWall />}
-              {activeTab === 'withdraw' && <WithdrawalPage />}
+              {/* Earner tabs */}
+              {!isAdvertiser && activeTab === 'tasks' && <Tasks />}
+              {!isAdvertiser && activeTab === 'withdraw' && <WithdrawalPage />}
+              {!isAdvertiser && activeTab === 'referrals' && <Dashboard />}
+              {/* Advertiser tabs */}
+              {isAdvertiser && activeTab === 'campaigns' && <Campaigns />}
+              {isAdvertiser && activeTab === 'create' && <CreateCampaign />}
+              {isAdvertiser && activeTab === 'deposit' && <Deposit />}
+              {/* Admin */}
               {activeTab === 'admin' && <AdminPanel />}
-              {activeTab === 'referrals' && <Dashboard />}
             </Layout>
           )}
         </motion.div>

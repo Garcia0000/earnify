@@ -82,21 +82,22 @@ async function startServer() {
 
   // --- AUTH ROUTES ---
   app.post("/api/auth/register", async (req, res) => {
-    const { email, password, referralCode } = req.body;
+    const { email, password, referralCode, role } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const userId = Math.random().toString(36).substring(2, 15);
       const personalReferralCode = Math.random().toString(36).substring(2, 9).toUpperCase();
+      const userRole = role === 'advertiser' ? 'advertiser' : 'earner';
 
       await pool.query(
-        "INSERT INTO users (id, email, password, referral_code, referred_by) VALUES (?, ?, ?, ?, ?)",
-        [userId, email, hashedPassword, personalReferralCode, referralCode || null]
+        "INSERT INTO users (id, email, password, referral_code, referred_by, role) VALUES (?, ?, ?, ?, ?, ?)",
+        [userId, email, hashedPassword, personalReferralCode, referralCode || null, userRole]
       );
 
       const token = jwt.sign({ id: userId, email }, AUTH_SECRET);
-      res.json({ token, user: { id: userId, email, referralCode: personalReferralCode } });
+      res.json({ token, user: { id: userId, email, referralCode: personalReferralCode, role: userRole } });
     } catch (error: any) {
       console.error("REGISTRATION ERROR:", error);
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {

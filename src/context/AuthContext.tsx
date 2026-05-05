@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, referralCode?: string) => Promise<void>;
+  register: (email: string, password: string, referralCode?: string, role?: string) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
 }
@@ -59,8 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
   };
 
-  const register = async (email: string, password: string, referralCode?: string) => {
-    const res = await axios.post('/api/auth/register', { email, password, referralCode });
+  const register = async (email: string, password: string, referralCode?: string, role?: string) => {
+    const res = await axios.post('/api/auth/register', { email, password, referralCode, role });
     const { token, user: userData } = res.data;
     localStorage.setItem('token', token);
     setAuthHeader(token);
