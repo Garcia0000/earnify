@@ -5,18 +5,18 @@ import { motion } from 'motion/react';
 import { Globe, Smartphone, Monitor, Sparkles, ChevronRight } from 'lucide-react';
 
 export default function OfferWall() {
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const { t } = useTranslation();
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!profile?.uid) return;
+    if (!user?.id) return;
 
     const fetchOffers = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/offers?tracking_id=${profile.uid}`);
+        const res = await fetch(`/api/offers?tracking_id=${user.id}`);
         const data = await res.json();
         setOffers(data);
       } catch (error) {
@@ -27,7 +27,7 @@ export default function OfferWall() {
     };
 
     fetchOffers();
-  }, [profile?.uid]);
+  }, [user?.id]);
 
   return (
     <motion.div
@@ -45,11 +45,11 @@ export default function OfferWall() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl border border-[var(--card-border)] text-[10px] font-black uppercase tracking-tighter text-gray-400 shadow-sm">
             <Globe size={14} className="text-primary" />
-            {profile?.country}
+            GLOBAL
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl border border-[var(--card-border)] text-[10px] font-black uppercase tracking-tighter text-gray-400 shadow-sm">
-            {profile?.device === 'mobile' ? <Smartphone size={14} className="text-primary" /> : <Monitor size={14} className="text-primary" />}
-            {profile?.device}
+            <Smartphone size={14} className="text-primary" />
+            SECURE
           </div>
         </div>
       </div>

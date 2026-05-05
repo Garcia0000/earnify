@@ -5,7 +5,7 @@ import { LayoutDashboard, Wallet, Gift, ShieldAlert, LogOut, Menu, X, Coins, Use
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Layout({ children, activeTab, onTabChange }: { children: React.ReactNode, activeTab: string, onTabChange: (tab: string) => void }) {
-  const { profile, balance, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { t, i18n } = useTranslation();
   const [isDark, setIsDark] = useState(false);
 
@@ -20,7 +20,7 @@ export default function Layout({ children, activeTab, onTabChange }: { children:
     { id: 'referrals', label: t('referrals'), icon: Users },
   ];
 
-  if (profile?.isAdmin) {
+  if (user?.isAdmin) {
     menuItems.push({ id: 'admin', label: t('admin'), icon: ShieldAlert });
   }
 
@@ -57,8 +57,8 @@ export default function Layout({ children, activeTab, onTabChange }: { children:
             
             <div className="hidden md:flex items-center gap-3 pl-6 border-l border-[var(--card-border)]">
               <div className="text-right">
-                <p className="text-xs font-bold opacity-50">{profile?.fullName}</p>
-                <p className="text-sm font-black text-primary">${balance?.current.toFixed(2)}</p>
+                <p className="text-xs font-bold opacity-50 truncate max-w-[120px]">{user?.email}</p>
+                <p className="text-sm font-black text-primary">${Number(user?.balance || 0).toFixed(2)}</p>
               </div>
               <button 
                 onClick={logout} 

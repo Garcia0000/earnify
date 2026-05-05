@@ -4,10 +4,10 @@ import { DollarSign, CheckCircle, TrendingUp, Users, Copy, Sparkles, ExternalLin
 import { motion } from 'motion/react';
 
 export default function Dashboard() {
-  const { profile, balance } = useAuth();
+  const { user } = useAuth();
   const { t } = useTranslation();
 
-  const referralLink = `${window.location.origin}?ref=${profile?.referralCode}`;
+  const referralLink = `${window.location.origin}?ref=${user?.referral_code}`;
 
   const copyRef = () => {
     navigator.clipboard.writeText(referralLink);
@@ -21,7 +21,7 @@ export default function Dashboard() {
         <h1 className="text-3xl md:text-5xl font-black mb-2 flex items-center justify-center md:justify-start gap-3">
           {t('welcome')} <Sparkles className="text-accent" />
         </h1>
-        <p className="text-gray-500 font-medium">{t('ready_to_earn')}</p>
+        <p className="text-gray-500 font-medium font-mono lowercase tracking-tighter">ready to maximize your gains?</p>
       </div>
 
       {/* BIG Balance Section */}
@@ -35,12 +35,12 @@ export default function Dashboard() {
         </div>
         <p className="text-sm font-black uppercase tracking-[0.3em] text-primary mb-4">{t('balance')}</p>
         <motion.div 
-          key={balance?.current}
+          key={user?.balance}
           initial={{ scale: 1.2, color: '#00FF87' }}
           animate={{ scale: 1, color: 'inherit' }}
           className="text-7xl md:text-9xl font-black tracking-tighter"
         >
-          ${balance?.current?.toFixed(2) || '0.00'}
+          ${Number(user?.balance || 0).toFixed(2)}
         </motion.div>
       </motion.div>
 
@@ -57,7 +57,7 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="text-sm font-bold opacity-50 uppercase tracking-wider">{t('total_earned')}</p>
-            <p className="text-3xl font-black">${balance?.totalEarned?.toFixed(2) || '0.00'}</p>
+            <p className="text-3xl font-black">${Number(user?.total_earned || 0).toFixed(2)}</p>
           </div>
         </motion.div>
 
@@ -72,7 +72,7 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="text-sm font-bold opacity-50 uppercase tracking-wider">{t('completed')}</p>
-            <p className="text-3xl font-black">{balance?.offersCompleted || 0}</p>
+            <p className="text-3xl font-black">ACTIVE</p>
           </div>
         </motion.div>
       </div>

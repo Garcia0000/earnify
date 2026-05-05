@@ -1,14 +1,12 @@
-export interface UserProfile {
-  uid: string;
+export interface User {
+  id: string;
   email: string;
-  fullName: string;
-  country: string;
-  device: string;
-  language: string;
-  referralCode: string;
-  referredBy?: string;
-  createdAt: any;
-  isAdmin: boolean;
+  balance: number;
+  total_earned: number;
+  referral_code: string;
+  referred_by?: string;
+  created_at: string;
+  isAdmin?: boolean;
 }
 
 export interface UserBalance {
@@ -19,20 +17,21 @@ export interface UserBalance {
 }
 
 export interface Withdrawal {
-  id: string;
-  userId: string;
+  id: number;
+  user_id: string;
   amount: number;
-  method: 'paypal' | 'bank_transfer';
+  method: string;
   status: 'pending' | 'approved' | 'paid' | 'rejected';
   details: string;
-  requestedAt: any;
+  created_at: string;
 }
 
 export interface Transaction {
-  id: string;
-  userId: string;
-  amount: number;
-  type: 'offer' | 'referral';
-  description: string;
-  timestamp: any;
+  id: number;
+  user_id: string;
+  amount_user: number;
+  type: 'offer' | 'referral' | 'withdrawal';
+  offer_name?: string;
+  tracking_id?: string;
+  created_at: string;
 }

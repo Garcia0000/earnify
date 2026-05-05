@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { collection, addDoc, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import axios from 'axios';
 import { Withdrawal } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { CreditCard, Landmark, History, Clock, CheckCircle2, XCircle, ChevronRight, DollarSign } from 'lucide-react';
-import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
+import { CreditCard, Landmark, History, Clock, CheckCircle2, XCircle, ChevronRight, DollarSign, Wallet } from 'lucide-react';
 
 export default function WithdrawalPage() {
-  const { profile, balance } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { t } = useTranslation();
   const [amount, setAmount] = useState('5.00');
   const [method, setMethod] = useState<'paypal' | 'bank_transfer'>('paypal');
@@ -17,47 +15,45 @@ export default function WithdrawalPage() {
   const [history, setHistory] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const fetchHistory = async () => {
+    try {
+      const res = await axios.get('/api/user/transactions');
+      // Transactions table now includes types like 'withdrawal'
+      // Or we can fetch from withdrawals specifically if we added an endpoint
+      // Let's assume we use /api/user/transactions for simplicity or add a specific one
+      // For now, I'll fetch withdrawals specifically (I should add this to server.ts)
+      const wRes = await axios.get('/api/user/withdrawals');
+      setHistory(wRes.data);
+    } catch (e) {
+      console.error("Failed to fetch history", e);
+    }
+  };
+
   useEffect(() => {
-    if (!profile) return;
-    const fetchHistory = async () => {
-      const q = query(
-        collection(db, 'withdrawals'),
-        where('userId', '==', profile.uid),
-        orderBy('requestedAt', 'desc')
-      );
-      try {
-        const snap = await getDocs(q);
-        setHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Withdrawal)));
-      } catch (e) {
-        handleFirestoreError(e, OperationType.LIST, 'withdrawals');
-      }
-    };
-    fetchHistory();
-  }, [profile]);
+    if (user) fetchHistory();
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile || !balance) return;
+    if (!user) return;
 
     const val = parseFloat(amount);
     if (val < 5) return alert(t('min_withdraw'));
-    if (val > balance.current) return alert('Insufficient balance');
+    if (val > user.balance) return alert('Insufficient balance');
 
     setLoading(true);
     try {
-      await addDoc(collection(db, 'withdrawals'), {
-        userId: profile.uid,
+      await axios.post('/api/user/withdraw', {
         amount: val,
         method,
-        details,
-        status: 'pending',
-        requestedAt: new Date()
+        details
       });
       alert('Withdrawal request submitted successfully!');
       setDetails('');
-    } catch (e) {
-      handleFirestoreError(e, OperationType.CREATE, 'withdrawals');
-      alert('Error submitting request');
+      await refreshProfile();
+      await fetchHistory();
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error submitting request');
     } finally {
       setLoading(false);
     }
@@ -80,7 +76,7 @@ export default function WithdrawalPage() {
 
         <div className="p-8 bg-primary text-white rounded-[2rem] shadow-xl shadow-primary/20 flex flex-col items-center">
             <p className="font-bold uppercase text-[10px] tracking-[0.3em] opacity-60 mb-2">{t('balance')}</p>
-            <p className="text-5xl font-black">${balance?.current.toFixed(2)}</p>
+            <p className="text-5xl font-black">${Number(user?.balance || 0).toFixed(2)}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -138,7 +134,7 @@ export default function WithdrawalPage() {
           </div>
 
           <button
-            disabled={loading || balance?.current < 5}
+            disabled={loading || (user?.balance || 0) < 5}
             className="w-full bg-primary text-white py-5 rounded-3xl font-black uppercase tracking-widest text-sm hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xl shadow-primary/20 tap-effect"
           >
             {loading ? 'Processing...' : t('request')}
@@ -175,7 +171,7 @@ export default function WithdrawalPage() {
                     {w.status === 'paid' ? <CheckCircle2 size={24} /> : w.status === 'rejected' ? <XCircle size={24} /> : <Clock size={24} />}
                   </div>
                   <div>
-                    <p className="text-xl font-black text-gray-900">${w.amount.toFixed(2)}</p>
+                    <p className="text-xl font-black text-gray-900">${Number(w.amount).toFixed(2)}</p>
                     <p className="text-[10px] uppercase font-black tracking-widest opacity-30">{w.method.replace('_', ' ')}</p>
                   </div>
                 </div>
@@ -187,7 +183,7 @@ export default function WithdrawalPage() {
                     {t(`status_${w.status}`)}
                   </p>
                   <p className="text-[10px] font-bold opacity-30">
-                    {new Date(w.requestedAt.seconds * 1000).toLocaleDateString()}
+                    {new Date(w.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </motion.div>
@@ -197,24 +193,4 @@ export default function WithdrawalPage() {
       </motion.div>
     </div>
   );
-}
-
-function Wallet(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h13" />
-            <path d="M16 12a2 2 0 0 0 0-4h-3a2 2 0 0 0 0 4h3Z" />
-        </svg>
-    )
 }

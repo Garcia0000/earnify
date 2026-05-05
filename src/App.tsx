@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './i18n/config';
@@ -11,7 +6,7 @@ import Dashboard from './components/Dashboard';
 import OfferWall from './components/OfferWall';
 import WithdrawalPage from './components/Withdrawal';
 import AdminPanel from './components/Admin';
-import { Coins, LogIn as GoogleIcon, ShieldCheck, Globe, Star, Sparkles } from 'lucide-react';
+import { Coins, LogIn as LoginIcon, ShieldCheck, Globe, Star, Sparkles, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
@@ -47,13 +42,35 @@ function SplashScreen() {
   );
 }
 
-function LoginScreen() {
-  const { loginWithGoogle } = useAuth();
+function AuthScreen() {
+  const { login, register } = useAuth();
   const { t } = useTranslation();
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      if (isLogin) {
+        await login(email, password);
+      } else {
+        const ref = localStorage.getItem('referredBy') || undefined;
+        await register(email, password, ref);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-fintech-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Decorative background elements */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/5 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2" />
 
@@ -69,17 +86,52 @@ function LoginScreen() {
           </div>
         </div>
         <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tighter italic uppercase">EARNIFY</h1>
-        <p className="text-gray-400 mb-12 font-medium leading-relaxed">
-            Payout on demand.<br/>
-            <span className="text-primary font-black uppercase tracking-widest text-[10px]">The Trusted Rewards Ecosystem</span>
-        </p>
         
-        <button
-          onClick={loginWithGoogle}
-          className="w-full flex items-center justify-center gap-4 bg-gray-900 text-white py-5 rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-primary transition-all shadow-2xl shadow-gray-200 active:scale-[0.96] group"
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-500 text-xs font-bold rounded-2xl border border-red-100 uppercase tracking-widest">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 px-2">Email Address</label>
+            <input 
+              required
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-6 py-5 rounded-2xl bg-gray-50 border border-gray-100 text-gray-900 font-bold outline-none focus:border-primary focus:bg-white transition-all shadow-sm"
+              placeholder="your@email.com"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 px-2">Password</label>
+            <input 
+              required
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-6 py-5 rounded-2xl bg-gray-50 border border-gray-100 text-gray-900 font-bold outline-none focus:border-primary focus:bg-white transition-all shadow-sm"
+              placeholder="••••••••"
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-4 bg-gray-900 text-white py-5 rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-primary transition-all shadow-2xl shadow-gray-200 active:scale-[0.96] group"
+          >
+            {isLogin ? <LoginIcon size={20} /> : <UserPlus size={20} />}
+            {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+          </button>
+        </form>
+
+        <button 
+          onClick={() => setIsLogin(!isLogin)}
+          className="mt-8 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-colors"
         >
-          <GoogleIcon size={20} className="group-hover:rotate-12 transition-transform" />
-          {t('google_login')}
+          {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
         </button>
 
         <div className="mt-12 grid grid-cols-3 gap-6 pt-10 border-t border-gray-50">
@@ -137,7 +189,7 @@ function MainApp() {
                 />
             </div>
           ) : !user ? (
-            <LoginScreen />
+            <AuthScreen />
           ) : (
             <Layout activeTab={activeTab} onTabChange={setActiveTab}>
               {activeTab === 'dashboard' && <Dashboard />}
