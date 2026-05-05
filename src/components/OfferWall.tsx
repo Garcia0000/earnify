@@ -10,6 +10,7 @@ export default function OfferWall() {
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [activeOffer, setActiveOffer] = useState<{ link: string, title: string } | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -121,11 +122,9 @@ export default function OfferWall() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map((offer, i) => (
-            <motion.a
+            <motion.div
               key={offer.id}
-              href={offer.link}
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={() => setActiveOffer({ link: offer.link, title: offer.title })}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
@@ -138,6 +137,7 @@ export default function OfferWall() {
                 textDecoration: 'none',
                 color: 'inherit',
                 borderRadius: 18,
+                cursor: 'pointer',
               }}
             >
               {/* Icon */}
@@ -181,8 +181,36 @@ export default function OfferWall() {
               }}>
                 <Zap size={13} /> Start
               </div>
-            </motion.a>
+            </motion.div>
           ))}
+        </div>
+      )}
+
+      {activeOffer && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.95)',
+          display: 'flex', flexDirection: 'column'
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px 16px', background: '#1E1B4B'
+          }}>
+            <p style={{ color: '#fff', fontWeight: 700, fontSize: 14, margin: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {activeOffer.title}
+            </p>
+            <button
+              onClick={() => setActiveOffer(null)}
+              style={{ background: '#fff', color: '#6C3EF4', border: 'none', borderRadius: 8, padding: '6px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', marginLeft: 12 }}
+            >
+              ✕ Close
+            </button>
+          </div>
+          <iframe
+            src={activeOffer.link}
+            style={{ flex: 1, border: 'none', width: '100%' }}
+            allow="accelerometer; camera; microphone"
+          />
         </div>
       )}
     </div>
